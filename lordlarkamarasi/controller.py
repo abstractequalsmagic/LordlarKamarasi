@@ -84,9 +84,9 @@ class Game:
     def event_handler(self):
         event = pygame.event.wait()
         while event.type is not QUIT:
+            self.logger.info(f"Event handled: {event}")
             self.process_event(event)
             event = pygame.event.wait()
-            print(event)
         else:
             pygame.quit()
 
