@@ -1,16 +1,19 @@
 import itertools
 import random
 import time
+import logging
 from collections import UserList
 from contextlib import suppress
 from configparser import ConfigParser
 from typing import Tuple
 
 import pygame
-from pygame.locals import QUIT
+from pygame.locals import *
 
 from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks, Entities
 from lordlarkamarasi.players import PlayerRegistery
+
+MOVE_KEYS = {K_RIGHT, K_LEFT, K_UP, K_DOWN}
 
 class Map(UserList):
     def __init__(self, width, height, surface):
@@ -59,34 +62,51 @@ class Game:
         self.map = Map.from_file('maps/base_map.ini')
         
         self.playerreg = PlayerRegistery()
-
+        self.player = self.playerreg.join("BTaskaya")
+        
+        self.logger = logging.getLogger('Game')
     def process_event(self, event: pygame.event.EventType):
+        if event.type is MOUSEMOTION:
+            x, y = event.rel
+            if x > 0 and self.player.coord.x <= self.map.width:
+                self.player.coord.x += 1
+            elif x < 0 and self.player.coord.x > self.map.width:
+                self.player.coord.x -= 1
+            
+            if y > 0 and self.player.coord.y <= self.map.height:
+                self.player.coord.y += 1
+            elif y < 0 and self.player.coord.y > self.map.height:
+                self.player.coord.y -= 1
+                
         self.draw_map()
-
-    def event_handler(self, interval: int = 0.005):
+        pygame.display.update()
+        
+    def event_handler(self):
         event = pygame.event.wait()
         while event.type is not QUIT:
             self.process_event(event)
-            pygame.display.update()
-            time.sleep(interval)
+            event = pygame.event.wait()
+            print(event)
         else:
             pygame.quit()
 
     def start(self):
-        self.playerreg.join("BTaskaya")
         self.event_handler()
-
+    
     def draw_map(self):
+        self.logger.info(f"Drawing surface to {self.map.width * self.map.height} tiles")
+        
         for rpos, row in enumerate(self.map):
             for cpos, block in enumerate(row):
                 self.surface.blit(
                     block.value.texture, (cpos * TILE_SIZE, rpos * TILE_SIZE)
                 )
-        
+                
+        self.logger.info(f"Drawing {len(self.playerreg)} players")
         for player in self.playerreg.values():
             self.surface.blit(Entities.PLAYER.value.texture, (player.coord.x * TILE_SIZE, player.coord.y * TILE_SIZE))
-
-
+            
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     game = Game()
     game.start()
