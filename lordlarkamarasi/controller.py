@@ -9,8 +9,8 @@ from typing import Tuple
 import pygame
 from pygame.locals import QUIT
 
-from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks
-
+from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks, Entities
+from lordlarkamarasi.players import PlayerRegistery
 
 class Map(UserList):
     def __init__(self, width, height, surface):
@@ -57,6 +57,8 @@ class Game:
 
         self.surface = pygame.display.set_mode(window)
         self.map = Map.from_file('maps/base_map.ini')
+        
+        self.playerreg = PlayerRegistery()
 
     def process_event(self, event: pygame.event.EventType):
         self.draw_map()
@@ -71,6 +73,7 @@ class Game:
             pygame.quit()
 
     def start(self):
+        self.playerreg.join("BTaskaya")
         self.event_handler()
 
     def draw_map(self):
@@ -79,6 +82,9 @@ class Game:
                 self.surface.blit(
                     block.value.texture, (cpos * TILE_SIZE, rpos * TILE_SIZE)
                 )
+        
+        for player in self.playerreg.values():
+            self.surface.blit(Entities.PLAYER.value.texture, (player.coord.x * TILE_SIZE, player.coord.y * TILE_SIZE))
 
 
 if __name__ == "__main__":
