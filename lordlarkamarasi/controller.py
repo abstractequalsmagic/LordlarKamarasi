@@ -3,23 +3,35 @@ import random
 import time
 from collections import UserList
 from contextlib import suppress
+from configparser import ConfigParser
 from typing import Tuple
 
 import pygame
 from pygame.locals import QUIT
 
-from lordlarkamarasi.textures import AVAILABLE_BLOCKS, TILE_SIZE, Blocks
+from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks
 
 
 class Map(UserList):
-    def __init__(self, width, height):
+    def __init__(self, width, height, surface):
         self.width = width
         self.height = height
-        self.data = list(
-            list(itertools.repeat(Blocks.GRASS, width)) for _ in range(height)
-        )
-        self._shake_map()
+        self.data = surface
 
+    @classmethod
+    def from_file(cls, file):
+        cfg = ConfigParser()
+        cfg.read(BASE_PATH / file)
+        
+        meta = cfg['meta']
+        width, height = meta.getint('width'), meta.getint('height')
+        
+        ground = cfg['ground']
+        default = Blocks.get_by_id(ground.getint('default'))
+        
+        surface = [list(itertools.repeat(default, width)) for _ in range(height)]
+        return cls(width, height, surface)
+        
     def _shake_map(self):
         for _ in range((self.width * self.height) // 32):
             print(random.choice(AVAILABLE_BLOCKS))
@@ -44,7 +56,7 @@ class Game:
         pygame.display.set_caption("Lordlar Kamarası")
 
         self.surface = pygame.display.set_mode(window)
-        self.map = Map(*(meter // 25 for meter in window))
+        self.map = Map.from_file('maps/base_map.ini')
 
     def process_event(self, event: pygame.event.EventType):
         self.draw_map()

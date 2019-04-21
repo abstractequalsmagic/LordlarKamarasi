@@ -10,8 +10,7 @@ BASE_PATH = Path(__file__).parent
 
 
 def relative_load(path: str) -> pygame.Surface:
-    return pygame.image.load(os.fspath(BASE_PATH / path))
-
+    return pygame.image.load(os.fspath(BASE_PATH / path)) 
 
 @dataclass
 class Block:
@@ -21,16 +20,17 @@ class Block:
 
 
 class Blocks(Enum):
-    STONE = Block(0, relative_load("textures/land/stone.png"))
-    GRASS = Block(1, relative_load("textures/land/grass.png"))
+    GRASS = Block(0, relative_load("textures/land/grass.png"))
+    STONE = Block(1, relative_load("textures/land/stone.png"))
     WATER = Block(2, relative_load("textures/land/water.png"))
     SAND = Block(3, relative_load("textures/land/sand.png"))
 
-
-AVAILABLE_BLOCKS = list(
-    filter(lambda block: not block.value.must_connect, Blocks.__members__.values())
-)
-MUST_CONNECT_BLOCKS = list(
-    filter(lambda block: block.value.must_connect, Blocks.__members__.values())
-)  # use set substractions
+    @classmethod
+    def get_by_id(cls, id):
+        block, = filter(lambda member: member.value.id == id, cls.__members__.values())
+        return cls(block)
+        
+ALL_BLOCKS = set(Blocks.__members__.values())
+AVAILABLE_BLOCKS = set(filter(lambda block: not block.value.must_connect, ALL_BLOCKS))
+MUST_CONNECT_BLOCKS = ALL_BLOCKS - AVAILABLE_BLOCKS
 TILE_SIZE = 25
