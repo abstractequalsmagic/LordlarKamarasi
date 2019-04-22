@@ -10,10 +10,9 @@ from typing import Tuple
 import pygame
 from pygame.locals import *
 
-from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks, Entities
+from lordlarkamarasi.textures import AVAILABLE_BLOCKS, BASE_PATH, TILE_SIZE, Blocks
 from lordlarkamarasi.players import PlayerRegistery
-
-MOVE_KEYS = {K_RIGHT, K_LEFT, K_UP, K_DOWN}
+from lordlarkamarasi.sprites import Player
 
 class Map(UserList):
     def __init__(self, width, height, surface):
@@ -54,43 +53,44 @@ class Map(UserList):
 
 
 class Game:
-    def __init__(self, window: Tuple[int, int] = (800, 800)):
+    def __init__(self):
         pygame.init()
         pygame.display.set_caption("Lordlar Kamarası")
 
-        self.surface = pygame.display.set_mode(window)
+        self.surface = pygame.display.set_mode((800, 800), DOUBLEBUF)
+        self.surface.set_alpha()
         self.map = Map.from_file('maps/base_map.ini')
-        
-        self.playerreg = PlayerRegistery()
+        self.sprites = pygame.sprite.Group()
+
+        self.playerreg = PlayerRegistery(sprite_hook = self.sprites)
         self.player = self.playerreg.join("BTaskaya")
         
         self.logger = logging.getLogger('Game')
+        
+        self.frame_count, self.frame_rate = 0, 0
+        
     def process_event(self, event: pygame.event.EventType):
-        if event.type is MOUSEMOTION:
-            x, y = event.rel
-            if x > 0 and self.player.coord.x <= self.map.width:
-                self.player.coord.x += 1
-            elif x < 0 and self.player.coord.x > self.map.width:
-                self.player.coord.x -= 1
-            
-            if y > 0 and self.player.coord.y <= self.map.height:
-                self.player.coord.y += 1
-            elif y < 0 and self.player.coord.y > self.map.height:
-                self.player.coord.y -= 1
-                
-        self.draw_map()
-        pygame.display.update()
+        self.sprites.update()
         
     def event_handler(self):
         event = pygame.event.wait()
-        while event.type is not QUIT:
+        while event.type != QUIT:
+            t0 = time.clock()
             self.logger.info(f"Event handled: {event}")
+            
             self.process_event(event)
-            event = pygame.event.wait()
+            self.draw_players()
+            pygame.display.update()
+            
+            t1 = time.clock()
+            self.logger.info(f"Event processed in {t1 - t0} seconds")
+            
+            event = pygame.event.poll()
         else:
             pygame.quit()
 
     def start(self):
+        self.draw_map()
         self.event_handler()
     
     def draw_map(self):
@@ -101,12 +101,12 @@ class Game:
                 self.surface.blit(
                     block.value.texture, (cpos * TILE_SIZE, rpos * TILE_SIZE)
                 )
-                
+    
+    def draw_players(self):
         self.logger.info(f"Drawing {len(self.playerreg)} players")
-        for player in self.playerreg.values():
-            self.surface.blit(Entities.PLAYER.value.texture, (player.coord.x * TILE_SIZE, player.coord.y * TILE_SIZE))
-            
+        self.sprites.draw(self.surface)
+        
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     game = Game()
     game.start()

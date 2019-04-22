@@ -29,9 +29,6 @@ class Blocks(Enum):
         block, = filter(lambda member: member.value.id == id, cls.__members__.values())
         return cls(block)
 
-class Entities(Enum):
-    PLAYER = Texture(0xF0, relative_load("textures/entities/player.png"))
-        
 ALL_BLOCKS = set(Blocks.__members__.values())
 AVAILABLE_BLOCKS = set(filter(lambda block: not block.value.must_connect, ALL_BLOCKS))
 MUST_CONNECT_BLOCKS = ALL_BLOCKS - AVAILABLE_BLOCKS
